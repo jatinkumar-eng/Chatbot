@@ -11,8 +11,13 @@ class ComposeRequest(BaseModel):
     trigger: dict
     customer: dict | None = None
 
+@app.get("/")
+def home():
+    return {"message": "Vera Bot API is running 🚀"}
+
 
 # -------- Endpoint 1: Health Check --------
+
 @app.get("/v1/healthz")
 def health():
     return {"status": "ok"}
@@ -47,6 +52,4 @@ def reply(req: ComposeRequest):
     result = compose(req.category, req.merchant, req.trigger, req.customer)
     return result
 
-@app.get("/")
-def home():
-    return {"message": "Vera Bot API is running 🚀"}
+
