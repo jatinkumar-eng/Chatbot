@@ -1,7 +1,7 @@
 def compose(category, merchant, trigger, customer=None):
 
     # -------------------------------
-    # STEP 1: Customer message case
+    # STEP 1: Customer message
     # -------------------------------
     if customer is not None:
         cust_name = customer.get("identity", {}).get("name", "Customer")
@@ -9,7 +9,8 @@ def compose(category, merchant, trigger, customer=None):
 
         body = (
             f"Hi {cust_name}, {merchant_name} here 🦷 "
-            f"Aapka checkup due hai. Want to book a slot this week?"
+            f"5–6 months ho gaye last visit ko — cleaning due hai. "
+            f"Is week slot book karna hai?"
         )
 
         return {
@@ -17,11 +18,11 @@ def compose(category, merchant, trigger, customer=None):
             "cta": "open_ended",
             "send_as": "merchant_on_behalf",
             "suppression_key": trigger.get("id", "no_id"),
-            "rationale": "Customer reminder"
+            "rationale": "Customer recall reminder"
         }
 
     # -------------------------------
-    # STEP 2: Merchant data (SAFE)
+    # STEP 2: Safe data extraction
     # -------------------------------
     identity = merchant.get("identity", {})
     performance = merchant.get("performance", {})
@@ -31,63 +32,63 @@ def compose(category, merchant, trigger, customer=None):
     locality = identity.get("locality", "")
     city = identity.get("city", "")
 
-    ctr = performance.get("ctr", 0)
-    peer_ctr = peer_stats.get("avg_ctr", 0)
+    ctr = float(performance.get("ctr", 0) or 0)
+    peer_ctr = float(peer_stats.get("avg_ctr", 0) or 0)
 
     trigger_kind = trigger.get("kind", "unknown")
-
- # -------------------------------
-# STEP 3: Trigger-based logic
-# -------------------------------
-
     signals = merchant.get("signals", [])
+
+    # -------------------------------
+    # STEP 3: Trigger-based logic
+    # -------------------------------
 
     if trigger_kind == "perf_dip":
 
         body = (
-            f"{name} ({locality}), aapka CTR {ctr:.2%} hai, "
-            f"jabki {city} mein similar businesses ka avg {peer_ctr:.2%} hai. "
+            f"{name} ({locality}) — aapka CTR {ctr:.2%} hai, "
+            f"jabki {city} ka avg {peer_ctr:.2%} hai. "
         )
 
-        # 🔥 Add signal-based personalization
+        # Add signal-based personalization
         if any("stale_posts" in s for s in signals):
-            body += " Aapke Google posts kaafi time se update nahi hue."
+            body += "Last post kaafi purana hai — customers fresh content nahi dekh pa rahe. "
 
-        # 🔥 Add curiosity hook
-        body += " Aap nearby customers miss kar rahe hain. Want me to fix this in 5 min?"
+        # Add compulsion (loss + curiosity)
+        body += (
+            "Is wajah se nearby searches miss ho rahe hain. "
+            "Main 5 min mein exact fix dikha doon?"
+        )
 
         cta = "YES/STOP"
-
 
     elif trigger_kind == "research_digest":
 
         payload = trigger.get("payload", {})
         item = payload.get("top_item", {})
 
-        title = item.get("title", "a new update")
+        title = item.get("title", "new update")
         source = item.get("source", "")
 
         body = (
-            f"{name}, new research: {title} "
+            f"{name}, aaj ka research update: {title} "
             f"{f'({source})' if source else ''}. "
             f"Yeh aapke patients ke liye useful ho sakta hai. "
-            f"Want me to simplify & draft a WhatsApp for you?"
+            f"Chahen to main iska simple WhatsApp draft bana doon?"
         )
 
         cta = "YES/STOP"
 
-
     else:
 
         body = (
-            f"Hi {name}, ek quick idea hai aapke business grow karne ke liye. "
-            f"Want to see?"
+            f"{name}, ek quick growth idea hai aapke business ke liye "
+            f"{locality} area mein. Want to see?"
         )
 
         cta = "YES/STOP"
 
     # -------------------------------
-    # STEP 4: Return final output
+    # STEP 4: Final output
     # -------------------------------
     return {
         "body": body,
