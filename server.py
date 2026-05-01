@@ -46,3 +46,7 @@ def tick(req: ComposeRequest):
 def reply(req: ComposeRequest):
     result = compose(req.category, req.merchant, req.trigger, req.customer)
     return result
+
+@app.get("/")
+def home():
+    return {"message": "Vera Bot API is running 🚀"}
